@@ -110,6 +110,14 @@ export default function Reports() {
     }
   };
 
+  const getTotalWeight = (items: { weight: number }[]) => {
+    return items.reduce((sum, item) => sum + item.weight, 0);
+  };
+
+  const getItemsDisplay = (items: { productName: string; quantity: number; weightPerUnit: number }[]) => {
+    return items.map(item => `${item.productName} (${item.quantity}×${item.weightPerUnit}kg)`).join(', ');
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader
@@ -181,7 +189,7 @@ export default function Reports() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Date</TableHead>
-                                <TableHead>Product</TableHead>
+                                <TableHead>Items</TableHead>
                                 <TableHead className="text-right">Weight</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                                 <TableHead className="text-right">Paid</TableHead>
@@ -193,8 +201,10 @@ export default function Reports() {
                               {report.purchases.map((purchase) => (
                                 <TableRow key={purchase.id}>
                                   <TableCell>{format(new Date(purchase.createdAt), 'dd/MM/yyyy')}</TableCell>
-                                  <TableCell>{purchase.productName}</TableCell>
-                                  <TableCell className="text-right">{purchase.weight} kg</TableCell>
+                                  <TableCell className="max-w-[200px] truncate" title={getItemsDisplay(purchase.items)}>
+                                    {getItemsDisplay(purchase.items)}
+                                  </TableCell>
+                                  <TableCell className="text-right">{getTotalWeight(purchase.items)} kg</TableCell>
                                   <TableCell className="text-right">₹{purchase.totalAmount.toLocaleString()}</TableCell>
                                   <TableCell className="text-right text-success">₹{purchase.paidAmount.toLocaleString()}</TableCell>
                                   <TableCell className="text-right">
@@ -308,7 +318,7 @@ export default function Reports() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Date</TableHead>
-                                <TableHead>Product</TableHead>
+                                <TableHead>Items</TableHead>
                                 <TableHead className="text-right">Weight</TableHead>
                                 <TableHead className="text-right">Total</TableHead>
                                 <TableHead className="text-right">Paid</TableHead>
@@ -320,8 +330,10 @@ export default function Reports() {
                               {report.sales.map((sale) => (
                                 <TableRow key={sale.id}>
                                   <TableCell>{format(new Date(sale.createdAt), 'dd/MM/yyyy')}</TableCell>
-                                  <TableCell>{sale.productName}</TableCell>
-                                  <TableCell className="text-right">{sale.weight} kg</TableCell>
+                                  <TableCell className="max-w-[200px] truncate" title={getItemsDisplay(sale.items)}>
+                                    {getItemsDisplay(sale.items)}
+                                  </TableCell>
+                                  <TableCell className="text-right">{getTotalWeight(sale.items)} kg</TableCell>
                                   <TableCell className="text-right">₹{sale.totalAmount.toLocaleString()}</TableCell>
                                   <TableCell className="text-right text-success">₹{sale.paidAmount.toLocaleString()}</TableCell>
                                   <TableCell className="text-right">

@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, TrendingUp } from 'lucide-react';
+import { Search, Plus, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
+import React from 'react';
 
 export default function Sales() {
   const { sales, addPaymentToSale } = useInventory();
   const [search, setSearch] = useState('');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [paymentDialog, setPaymentDialog] = useState<{
     open: boolean;
     saleId: string;
@@ -23,8 +25,20 @@ export default function Sales() {
 
   const filteredSales = sales.filter(sale =>
     sale.customerName.toLowerCase().includes(search.toLowerCase()) ||
-    sale.productName.toLowerCase().includes(search.toLowerCase())
+    sale.items.some(item => item.productName.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const openPaymentDialog = (sale: typeof sales[0]) => {
     setPaymentDialog({
@@ -33,6 +47,17 @@ export default function Sales() {
       customerName: sale.customerName,
       balanceAmount: sale.balanceAmount,
     });
+  };
+
+  const getTotalWeight = (items: typeof sales[0]['items']) => {
+    return items.reduce((sum, item) => sum + item.weight, 0);
+  };
+
+  const getItemsSummary = (items: typeof sales[0]['items']) => {
+    if (items.length === 1) {
+      return `${items[0].productName} (${items[0].quantity} bags)`;
+    }
+    return `${items.length} items`;
   };
 
   return (
@@ -67,10 +92,11 @@ export default function Sales() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10"></TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Product</TableHead>
+                    <TableHead>Items</TableHead>
                     <TableHead className="text-right">Weight</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Paid</TableHead>
@@ -80,35 +106,59 @@ export default function Sales() {
                 </TableHeader>
                 <TableBody>
                   {filteredSales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      <TableCell>{format(new Date(sale.createdAt), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell className="font-medium">{sale.customerName}</TableCell>
-                      <TableCell>{sale.customerPhone || '-'}</TableCell>
-                      <TableCell>{sale.productName}</TableCell>
-                      <TableCell className="text-right">{sale.weight} kg</TableCell>
-                      <TableCell className="text-right">₹{sale.totalAmount.toLocaleString()}</TableCell>
-                      <TableCell className="text-right text-success">₹{sale.paidAmount.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">
-                        {sale.balanceAmount > 0 ? (
-                          <Badge variant="destructive">₹{sale.balanceAmount.toLocaleString()}</Badge>
-                        ) : (
-                          <Badge className="bg-success text-success-foreground">Paid</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {sale.balanceAmount > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openPaymentDialog(sale)}
-                            className="gap-1"
-                          >
-                            <Plus className="h-3 w-3" />
-                            Pay
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                    <React.Fragment key={sale.id}>
+                      <TableRow className="cursor-pointer" onClick={() => toggleRow(sale.id)}>
+                        <TableCell>
+                          {sale.items.length > 1 && (
+                            expandedRows.has(sale.id) ? 
+                              <ChevronUp className="h-4 w-4 text-muted-foreground" /> : 
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </TableCell>
+                        <TableCell>{format(new Date(sale.createdAt), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell className="font-medium">{sale.customerName}</TableCell>
+                        <TableCell>{sale.customerPhone || '-'}</TableCell>
+                        <TableCell>{getItemsSummary(sale.items)}</TableCell>
+                        <TableCell className="text-right">{getTotalWeight(sale.items)} kg</TableCell>
+                        <TableCell className="text-right">₹{sale.totalAmount.toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-success">₹{sale.paidAmount.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
+                          {sale.balanceAmount > 0 ? (
+                            <Badge variant="destructive">₹{sale.balanceAmount.toLocaleString()}</Badge>
+                          ) : (
+                            <Badge className="bg-success text-success-foreground">Paid</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {sale.balanceAmount > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => { e.stopPropagation(); openPaymentDialog(sale); }}
+                              className="gap-1"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Pay
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {expandedRows.has(sale.id) && sale.items.length > 1 && (
+                        sale.items.map((item, idx) => (
+                          <TableRow key={`${sale.id}-${idx}`} className="bg-muted/30">
+                            <TableCell></TableCell>
+                            <TableCell></TableCell>
+                            <TableCell colSpan={2} className="text-muted-foreground text-sm pl-8">
+                              └ {item.productName}
+                            </TableCell>
+                            <TableCell className="text-sm">{item.quantity} bags × {item.weightPerUnit}kg</TableCell>
+                            <TableCell className="text-right text-sm">{item.weight} kg</TableCell>
+                            <TableCell className="text-right text-sm">₹{item.amount.toLocaleString()}</TableCell>
+                            <TableCell colSpan={3}></TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
