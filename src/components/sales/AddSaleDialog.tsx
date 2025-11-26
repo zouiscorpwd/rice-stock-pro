@@ -108,25 +108,25 @@ export function AddSaleDialog() {
                 <SelectContent>
                   {products.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name} ({product.stock} {product.unit})
+                      {product.name} ({product.weightPerUnit}kg - {product.quantity} bags)
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="weight">Weight (kg) *</Label>
+              <Label htmlFor="weight">Total Weight (kg) *</Label>
               <Input
                 id="weight"
                 type="number"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
-                placeholder="Enter weight"
+                placeholder="Enter total weight"
                 max={selectedProduct?.stock}
               />
               {selectedProduct && (
                 <p className="text-xs text-muted-foreground">
-                  Available: {selectedProduct.stock} {selectedProduct.unit}
+                  Available: {selectedProduct.stock} kg ({selectedProduct.quantity} bags × {selectedProduct.weightPerUnit}kg)
                 </p>
               )}
             </div>

@@ -1,7 +1,12 @@
+export const WEIGHT_VARIANTS = [5, 10, 26] as const;
+export type WeightVariant = typeof WEIGHT_VARIANTS[number];
+
 export interface Product {
   id: string;
   name: string;
-  stock: number;
+  weightPerUnit: WeightVariant; // kg per bag/pack (5kg, 10kg, 26kg)
+  quantity: number; // number of bags/packs
+  stock: number; // total stock in kg (weightPerUnit * quantity)
   unit: string;
   createdAt: Date;
 }

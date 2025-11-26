@@ -3,16 +3,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import { useInventory } from '@/context/InventoryContext';
+import { WEIGHT_VARIANTS, WeightVariant } from '@/types/inventory';
 import { toast } from 'sonner';
 
 export function AddProductDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
-  const [stock, setStock] = useState('');
+  const [weightPerUnit, setWeightPerUnit] = useState<WeightVariant>(5);
+  const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('kg');
   const { addProduct } = useInventory();
+
+  const totalStock = weightPerUnit * (Number(quantity) || 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,16 +25,22 @@ export function AddProductDialog() {
       toast.error('Please enter product name');
       return;
     }
+    if (!quantity || Number(quantity) <= 0) {
+      toast.error('Please enter valid quantity');
+      return;
+    }
     
     addProduct({
       name: name.trim(),
-      stock: Number(stock) || 0,
+      weightPerUnit,
+      quantity: Number(quantity),
       unit,
     });
     
     toast.success('Product added successfully');
     setName('');
-    setStock('');
+    setWeightPerUnit(5);
+    setQuantity('');
     setUnit('kg');
     setOpen(false);
   };
@@ -48,7 +59,7 @@ export function AddProductDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Product Name</Label>
+            <Label htmlFor="name">Product Name *</Label>
             <Input
               id="name"
               value={name}
@@ -56,17 +67,40 @@ export function AddProductDialog() {
               placeholder="Enter product name"
             />
           </div>
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="stock">Initial Stock</Label>
+              <Label htmlFor="weightPerUnit">Weight per Bag (kg) *</Label>
+              <Select 
+                value={weightPerUnit.toString()} 
+                onValueChange={(val) => setWeightPerUnit(Number(val) as WeightVariant)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select weight" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEIGHT_VARIANTS.map((w) => (
+                    <SelectItem key={w} value={w.toString()}>
+                      {w} kg
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity (Bags) *</Label>
               <Input
-                id="stock"
+                id="quantity"
                 type="number"
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
                 placeholder="0"
+                min="0"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="unit">Unit</Label>
               <Input
@@ -76,7 +110,14 @@ export function AddProductDialog() {
                 placeholder="kg"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Total Stock</Label>
+              <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted text-muted-foreground font-medium">
+                {totalStock.toLocaleString()} kg
+              </div>
+            </div>
           </div>
+
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel

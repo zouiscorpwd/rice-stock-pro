@@ -73,8 +73,9 @@ export default function Products() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product Name</TableHead>
-                    <TableHead className="text-right">Stock</TableHead>
-                    <TableHead>Unit</TableHead>
+                    <TableHead className="text-right">Weight/Bag</TableHead>
+                    <TableHead className="text-right">Quantity (Bags)</TableHead>
+                    <TableHead className="text-right">Total Stock</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -83,8 +84,9 @@ export default function Products() {
                   {filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell className="text-right">{product.stock.toLocaleString()}</TableCell>
-                      <TableCell>{product.unit}</TableCell>
+                      <TableCell className="text-right">{product.weightPerUnit} kg</TableCell>
+                      <TableCell className="text-right">{product.quantity.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{product.stock.toLocaleString()} {product.unit}</TableCell>
                       <TableCell>{getStockBadge(product.stock)}</TableCell>
                       <TableCell className="text-right">
                         <AlertDialog>
