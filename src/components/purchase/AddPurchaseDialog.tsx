@@ -101,21 +101,26 @@ export function AddPurchaseDialog() {
                 <SelectContent>
                   {products.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name}
+                      {product.name} ({product.weightPerUnit}kg bags)
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="weight">Weight (kg) *</Label>
+              <Label htmlFor="weight">Total Weight (kg) *</Label>
               <Input
                 id="weight"
                 type="number"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
-                placeholder="Enter weight"
+                placeholder="Enter total weight"
               />
+              {productId && products.find(p => p.id === productId) && (
+                <p className="text-xs text-muted-foreground">
+                  ≈ {Math.ceil(Number(weight || 0) / (products.find(p => p.id === productId)?.weightPerUnit || 1))} bags
+                </p>
+              )}
             </div>
           </div>
 

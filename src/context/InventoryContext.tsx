@@ -5,7 +5,7 @@ interface InventoryContextType {
   products: Product[];
   purchases: Purchase[];
   sales: Sale[];
-  addProduct: (product: Omit<Product, 'id' | 'createdAt'>) => void;
+  addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'stock'>) => void;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   addPurchase: (purchase: Omit<Purchase, 'id' | 'createdAt' | 'payments' | 'balanceAmount'>) => void;
@@ -18,9 +18,9 @@ const InventoryContext = createContext<InventoryContextType | undefined>(undefin
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Basmati Rice', stock: 500, unit: 'kg', createdAt: new Date() },
-    { id: '2', name: 'Sona Masoori', stock: 300, unit: 'kg', createdAt: new Date() },
-    { id: '3', name: 'Brown Rice', stock: 150, unit: 'kg', createdAt: new Date() },
+    { id: '1', name: 'Basmati Rice', weightPerUnit: 26, quantity: 20, stock: 520, unit: 'kg', createdAt: new Date() },
+    { id: '2', name: 'Sona Masoori', weightPerUnit: 10, quantity: 30, stock: 300, unit: 'kg', createdAt: new Date() },
+    { id: '3', name: 'Brown Rice', weightPerUnit: 5, quantity: 30, stock: 150, unit: 'kg', createdAt: new Date() },
   ]);
   
   const [purchases, setPurchases] = useState<Purchase[]>([
@@ -55,10 +55,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     }
   ]);
 
-  const addProduct = (product: Omit<Product, 'id' | 'createdAt'>) => {
+  const addProduct = (product: Omit<Product, 'id' | 'createdAt' | 'stock'>) => {
     const newProduct: Product = {
       ...product,
       id: Date.now().toString(),
+      stock: product.weightPerUnit * product.quantity,
       createdAt: new Date(),
     };
     setProducts(prev => [...prev, newProduct]);
@@ -83,12 +84,18 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     };
     setPurchases(prev => [...prev, newPurchase]);
     
-    // Update stock
-    setProducts(prev => prev.map(p => 
-      p.id === purchase.productId 
-        ? { ...p, stock: p.stock + purchase.weight }
-        : p
-    ));
+    // Update stock and quantity
+    setProducts(prev => prev.map(p => {
+      if (p.id === purchase.productId) {
+        const addedQuantity = Math.ceil(purchase.weight / p.weightPerUnit);
+        return { 
+          ...p, 
+          quantity: p.quantity + addedQuantity,
+          stock: p.stock + purchase.weight 
+        };
+      }
+      return p;
+    }));
   };
 
   const addSale = (sale: Omit<Sale, 'id' | 'createdAt' | 'payments' | 'balanceAmount'>) => {
@@ -102,12 +109,18 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     };
     setSales(prev => [...prev, newSale]);
     
-    // Update stock
-    setProducts(prev => prev.map(p => 
-      p.id === sale.productId 
-        ? { ...p, stock: Math.max(0, p.stock - sale.weight) }
-        : p
-    ));
+    // Update stock and quantity
+    setProducts(prev => prev.map(p => {
+      if (p.id === sale.productId) {
+        const soldQuantity = Math.ceil(sale.weight / p.weightPerUnit);
+        return { 
+          ...p, 
+          quantity: Math.max(0, p.quantity - soldQuantity),
+          stock: Math.max(0, p.stock - sale.weight) 
+        };
+      }
+      return p;
+    }));
   };
 
   const addPaymentToPurchase = (purchaseId: string, payment: Omit<Payment, 'id'>) => {
