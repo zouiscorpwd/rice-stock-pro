@@ -4,9 +4,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useInventory } from '@/context/InventoryContext';
 import { toast } from 'sonner';
+import { SaleItem } from '@/types/inventory';
+
+interface SaleItemForm {
+  productId: string;
+  productName: string;
+  weightPerUnit: number;
+  quantity: string;
+  amount: string;
+  availableQty: number;
+}
+
+const emptyItem: SaleItemForm = {
+  productId: '',
+  productName: '',
+  weightPerUnit: 0,
+  quantity: '',
+  amount: '',
+  availableQty: 0,
+};
 
 export function AddSaleDialog() {
   const [open, setOpen] = useState(false);
@@ -14,39 +33,78 @@ export function AddSaleDialog() {
   
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [productId, setProductId] = useState('');
-  const [weight, setWeight] = useState('');
-  const [totalAmount, setTotalAmount] = useState('');
+  const [items, setItems] = useState<SaleItemForm[]>([{ ...emptyItem }]);
   const [paidAmount, setPaidAmount] = useState('');
 
-  const selectedProduct = products.find(p => p.id === productId);
+  const totalAmount = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const balance = Math.max(0, totalAmount - (Number(paidAmount) || 0));
+
+  const handleProductChange = (index: number, productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setItems(prev => prev.map((item, i) => 
+        i === index ? { 
+          ...item, 
+          productId, 
+          productName: product.name, 
+          weightPerUnit: product.weightPerUnit,
+          availableQty: product.quantity 
+        } : item
+      ));
+    }
+  };
+
+  const handleItemChange = (index: number, field: keyof SaleItemForm, value: string) => {
+    setItems(prev => prev.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    ));
+  };
+
+  const addItem = () => {
+    setItems(prev => [...prev, { ...emptyItem }]);
+  };
+
+  const removeItem = (index: number) => {
+    if (items.length > 1) {
+      setItems(prev => prev.filter((_, i) => i !== index));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!customerName.trim() || !productId || !weight || !totalAmount) {
-      toast.error('Please fill all required fields');
+    if (!customerName.trim()) {
+      toast.error('Please enter customer name');
       return;
     }
 
-    const product = products.find(p => p.id === productId);
-    if (!product) {
-      toast.error('Please select a valid product');
+    const validItems = items.filter(item => item.productId && Number(item.quantity) > 0 && Number(item.amount) > 0);
+    if (validItems.length === 0) {
+      toast.error('Please add at least one valid item');
       return;
     }
 
-    if (Number(weight) > product.stock) {
-      toast.error(`Insufficient stock. Available: ${product.stock} ${product.unit}`);
-      return;
+    // Check stock availability
+    for (const item of validItems) {
+      const product = products.find(p => p.id === item.productId);
+      if (product && Number(item.quantity) > product.quantity) {
+        toast.error(`Insufficient stock for ${item.productName}. Available: ${product.quantity} bags`);
+        return;
+      }
     }
+
+    const saleItems: Omit<SaleItem, 'weight'>[] = validItems.map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      weightPerUnit: item.weightPerUnit,
+      quantity: Number(item.quantity),
+      amount: Number(item.amount),
+    }));
 
     addSale({
       customerName: customerName.trim(),
-      customerPhone: customerPhone.trim(),
-      productId,
-      productName: product.name,
-      weight: Number(weight),
-      totalAmount: Number(totalAmount),
+      customerPhone: customerPhone.trim() || undefined,
+      items: saleItems,
       paidAmount: Number(paidAmount) || 0,
     });
 
@@ -58,9 +116,7 @@ export function AddSaleDialog() {
   const resetForm = () => {
     setCustomerName('');
     setCustomerPhone('');
-    setProductId('');
-    setWeight('');
-    setTotalAmount('');
+    setItems([{ ...emptyItem }]);
     setPaidAmount('');
   };
 
@@ -72,7 +128,7 @@ export function AddSaleDialog() {
           Add Sale
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Sale</DialogTitle>
         </DialogHeader>
@@ -98,50 +154,94 @@ export function AddSaleDialog() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="product">Product *</Label>
-              <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} ({product.weightPerUnit}kg - {product.quantity} bags)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Items</Label>
+              <Button type="button" variant="outline" size="sm" onClick={addItem} className="gap-1">
+                <Plus className="h-3 w-3" />
+                Add Item
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="weight">Total Weight (kg) *</Label>
-              <Input
-                id="weight"
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="Enter total weight"
-                max={selectedProduct?.stock}
-              />
-              {selectedProduct && (
-                <p className="text-xs text-muted-foreground">
-                  Available: {selectedProduct.stock} kg ({selectedProduct.quantity} bags × {selectedProduct.weightPerUnit}kg)
-                </p>
-              )}
+            
+            <div className="space-y-3">
+              {items.map((item, index) => {
+                const product = products.find(p => p.id === item.productId);
+                return (
+                  <div key={index} className="p-3 border rounded-lg space-y-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Item {index + 1}</span>
+                      {items.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem(index)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Product *</Label>
+                        <Select value={item.productId} onValueChange={(val) => handleProductChange(index, val)}>
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name} ({p.weightPerUnit}kg - {p.quantity} bags)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Quantity (Bags) *</Label>
+                        <Input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                          placeholder="0"
+                          className="h-9"
+                          min="1"
+                          max={product?.quantity}
+                        />
+                        {product && (
+                          <p className="text-xs text-muted-foreground">Available: {product.quantity} bags</p>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Total Weight</Label>
+                        <div className="h-9 px-3 py-2 rounded-md border border-input bg-muted text-sm text-muted-foreground">
+                          {item.weightPerUnit && item.quantity ? `${item.weightPerUnit * Number(item.quantity)} kg` : '-'}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Amount *</Label>
+                        <Input
+                          type="number"
+                          value={item.amount}
+                          onChange={(e) => handleItemChange(index, 'amount', e.target.value)}
+                          placeholder="₹0"
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 pt-2 border-t">
             <div className="space-y-2">
-              <Label htmlFor="totalAmount">Total Amount *</Label>
-              <Input
-                id="totalAmount"
-                type="number"
-                value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)}
-                placeholder="₹0"
-              />
+              <Label>Total Amount</Label>
+              <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted font-medium">
+                ₹{totalAmount.toLocaleString()}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="paidAmount">Paid Amount</Label>
@@ -156,7 +256,7 @@ export function AddSaleDialog() {
             <div className="space-y-2">
               <Label>Balance</Label>
               <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted text-muted-foreground">
-                ₹{Math.max(0, (Number(totalAmount) || 0) - (Number(paidAmount) || 0))}
+                ₹{balance.toLocaleString()}
               </div>
             </div>
           </div>
