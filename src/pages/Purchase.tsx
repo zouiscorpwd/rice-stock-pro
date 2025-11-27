@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { AddPurchaseDialog } from '@/components/purchase/AddPurchaseDialog';
 import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
+import { PurchaseInvoice } from '@/components/purchase/PurchaseInvoice';
 import { useInventory } from '@/context/InventoryContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, ShoppingCart } from 'lucide-react';
+import { Search, Plus, ShoppingCart, FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import type { Purchase } from '@/types/inventory';
 
 export default function Purchase() {
   const { purchases, addPaymentToPurchase } = useInventory();
@@ -20,6 +22,10 @@ export default function Purchase() {
     billerName: string;
     balanceAmount: number;
   }>({ open: false, purchaseId: '', billerName: '', balanceAmount: 0 });
+  const [invoiceDialog, setInvoiceDialog] = useState<{
+    open: boolean;
+    purchase: Purchase | null;
+  }>({ open: false, purchase: null });
 
   const filteredPurchases = purchases.filter(purchase =>
     purchase.billerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -100,17 +106,28 @@ export default function Purchase() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {purchase.balanceAmount > 0 && (
+                          <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => openPaymentDialog(purchase)}
+                              onClick={() => setInvoiceDialog({ open: true, purchase })}
                               className="gap-1"
                             >
-                              <Plus className="h-3 w-3" />
-                              Pay
+                              <FileText className="h-3 w-3" />
+                              Invoice
                             </Button>
-                          )}
+                            {purchase.balanceAmount > 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openPaymentDialog(purchase)}
+                                className="gap-1"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Pay
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -130,6 +147,12 @@ export default function Purchase() {
         partyName={paymentDialog.billerName}
         balanceAmount={paymentDialog.balanceAmount}
         onAddPayment={addPaymentToPurchase}
+      />
+
+      <PurchaseInvoice
+        purchase={invoiceDialog.purchase}
+        open={invoiceDialog.open}
+        onOpenChange={(open) => setInvoiceDialog(prev => ({ ...prev, open }))}
       />
     </div>
   );

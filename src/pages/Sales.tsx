@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { AddSaleDialog } from '@/components/sales/AddSaleDialog';
 import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
+import { SalesInvoice } from '@/components/sales/SalesInvoice';
 import { useInventory } from '@/context/InventoryContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, TrendingUp, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import React from 'react';
+import type { Sale } from '@/types/inventory';
 
 export default function Sales() {
   const { sales, addPaymentToSale } = useInventory();
@@ -22,6 +24,10 @@ export default function Sales() {
     customerName: string;
     balanceAmount: number;
   }>({ open: false, saleId: '', customerName: '', balanceAmount: 0 });
+  const [invoiceDialog, setInvoiceDialog] = useState<{
+    open: boolean;
+    sale: Sale | null;
+  }>({ open: false, sale: null });
 
   const filteredSales = sales.filter(sale =>
     sale.customerName.toLowerCase().includes(search.toLowerCase()) ||
@@ -130,17 +136,28 @@ export default function Sales() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {sale.balanceAmount > 0 && (
+                          <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={(e) => { e.stopPropagation(); openPaymentDialog(sale); }}
+                              onClick={(e) => { e.stopPropagation(); setInvoiceDialog({ open: true, sale }); }}
                               className="gap-1"
                             >
-                              <Plus className="h-3 w-3" />
-                              Pay
+                              <FileText className="h-3 w-3" />
+                              Invoice
                             </Button>
-                          )}
+                            {sale.balanceAmount > 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => { e.stopPropagation(); openPaymentDialog(sale); }}
+                                className="gap-1"
+                              >
+                                <Plus className="h-3 w-3" />
+                                Pay
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                       {expandedRows.has(sale.id) && sale.items.length > 1 && (
@@ -175,6 +192,12 @@ export default function Sales() {
         partyName={paymentDialog.customerName}
         balanceAmount={paymentDialog.balanceAmount}
         onAddPayment={addPaymentToSale}
+      />
+
+      <SalesInvoice
+        sale={invoiceDialog.sale}
+        open={invoiceDialog.open}
+        onOpenChange={(open) => setInvoiceDialog(prev => ({ ...prev, open }))}
       />
     </div>
   );
