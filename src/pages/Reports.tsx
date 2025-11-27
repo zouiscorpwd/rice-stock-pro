@@ -201,7 +201,7 @@ export default function Reports() {
                               {report.purchases.map((purchase) => (
                                 <TableRow key={purchase.id}>
                                   <TableCell>{format(new Date(purchase.createdAt), 'dd/MM/yyyy')}</TableCell>
-                                  <TableCell className="max-w-[200px] truncate" title={getItemsDisplay(purchase.items)}>
+                                  <TableCell className="min-w-[250px]" title={getItemsDisplay(purchase.items)}>
                                     {getItemsDisplay(purchase.items)}
                                   </TableCell>
                                   <TableCell className="text-right">{getTotalWeight(purchase.items)} kg</TableCell>
@@ -330,7 +330,7 @@ export default function Reports() {
                               {report.sales.map((sale) => (
                                 <TableRow key={sale.id}>
                                   <TableCell>{format(new Date(sale.createdAt), 'dd/MM/yyyy')}</TableCell>
-                                  <TableCell className="max-w-[200px] truncate" title={getItemsDisplay(sale.items)}>
+                                  <TableCell className="min-w-[250px]" title={getItemsDisplay(sale.items)}>
                                     {getItemsDisplay(sale.items)}
                                   </TableCell>
                                   <TableCell className="text-right">{getTotalWeight(sale.items)} kg</TableCell>
