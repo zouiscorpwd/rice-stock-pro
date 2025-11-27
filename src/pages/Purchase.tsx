@@ -23,7 +23,7 @@ export default function Purchase() {
 
   const filteredPurchases = purchases.filter(purchase =>
     purchase.billerName.toLowerCase().includes(search.toLowerCase()) ||
-    purchase.productName.toLowerCase().includes(search.toLowerCase())
+    purchase.items.some(item => item.productName.toLowerCase().includes(search.toLowerCase()))
   );
 
   const openPaymentDialog = (purchase: typeof purchases[0]) => {
@@ -70,8 +70,8 @@ export default function Purchase() {
                     <TableHead>Date</TableHead>
                     <TableHead>Biller</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Weight</TableHead>
+                    <TableHead>Products</TableHead>
+                    <TableHead className="text-right">Total Weight</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Paid</TableHead>
                     <TableHead className="text-right">Balance</TableHead>
@@ -79,37 +79,42 @@ export default function Purchase() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPurchases.map((purchase) => (
-                    <TableRow key={purchase.id}>
-                      <TableCell>{format(new Date(purchase.createdAt), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell className="font-medium">{purchase.billerName}</TableCell>
-                      <TableCell>{purchase.billerPhone || '-'}</TableCell>
-                      <TableCell>{purchase.productName}</TableCell>
-                      <TableCell className="text-right">{purchase.weight} kg</TableCell>
-                      <TableCell className="text-right">₹{purchase.totalAmount.toLocaleString()}</TableCell>
-                      <TableCell className="text-right text-success">₹{purchase.paidAmount.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">
-                        {purchase.balanceAmount > 0 ? (
-                          <Badge variant="destructive">₹{purchase.balanceAmount.toLocaleString()}</Badge>
-                        ) : (
-                          <Badge className="bg-success text-success-foreground">Paid</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {purchase.balanceAmount > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openPaymentDialog(purchase)}
-                            className="gap-1"
-                          >
-                            <Plus className="h-3 w-3" />
-                            Pay
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredPurchases.map((purchase) => {
+                    const totalWeight = purchase.items.reduce((sum, item) => sum + item.weight, 0);
+                    const productNames = purchase.items.map(item => `${item.productName} (${item.quantity})`).join(', ');
+                    
+                    return (
+                      <TableRow key={purchase.id}>
+                        <TableCell>{format(new Date(purchase.createdAt), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell className="font-medium">{purchase.billerName}</TableCell>
+                        <TableCell>{purchase.billerPhone || '-'}</TableCell>
+                        <TableCell className="max-w-xs truncate" title={productNames}>{productNames}</TableCell>
+                        <TableCell className="text-right">{totalWeight} kg</TableCell>
+                        <TableCell className="text-right">₹{purchase.totalAmount.toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-success">₹{purchase.paidAmount.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
+                          {purchase.balanceAmount > 0 ? (
+                            <Badge variant="destructive">₹{purchase.balanceAmount.toLocaleString()}</Badge>
+                          ) : (
+                            <Badge className="bg-success text-success-foreground">Paid</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {purchase.balanceAmount > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openPaymentDialog(purchase)}
+                              className="gap-1"
+                            >
+                              <Plus className="h-3 w-3" />
+                              Pay
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
