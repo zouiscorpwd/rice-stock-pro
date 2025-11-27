@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string | null
+          id: string
+          note: string | null
+          purchase_id: string | null
+          sale_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          note?: string | null
+          purchase_id?: string | null
+          sale_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          note?: string | null
+          purchase_id?: string | null
+          sale_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          quantity: number
+          stock: number
+          unit: string
+          updated_at: string | null
+          user_id: string
+          weight_per_unit: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          quantity?: number
+          stock?: number
+          unit?: string
+          updated_at?: string | null
+          user_id: string
+          weight_per_unit: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          quantity?: number
+          stock?: number
+          unit?: string
+          updated_at?: string | null
+          user_id?: string
+          weight_per_unit?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -35,6 +116,180 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      purchase_items: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          product_id: string
+          product_name: string
+          purchase_id: string
+          quantity: number
+          weight: number
+          weight_per_unit: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          product_id: string
+          product_name: string
+          purchase_id: string
+          quantity: number
+          weight: number
+          weight_per_unit: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          product_name?: string
+          purchase_id?: string
+          quantity?: number
+          weight?: number
+          weight_per_unit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_items_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchases: {
+        Row: {
+          balance_amount: number
+          biller_name: string
+          biller_phone: string | null
+          created_at: string | null
+          id: string
+          paid_amount: number
+          total_amount: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_amount: number
+          biller_name: string
+          biller_phone?: string | null
+          created_at?: string | null
+          id?: string
+          paid_amount?: number
+          total_amount: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_amount?: number
+          biller_name?: string
+          biller_phone?: string | null
+          created_at?: string | null
+          id?: string
+          paid_amount?: number
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          sale_id: string
+          weight: number
+          weight_per_unit: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          sale_id: string
+          weight: number
+          weight_per_unit: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          weight?: number
+          weight_per_unit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          balance_amount: number
+          created_at: string | null
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          paid_amount: number
+          total_amount: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_amount: number
+          created_at?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          paid_amount?: number
+          total_amount: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_amount?: number
+          created_at?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          paid_amount?: number
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
