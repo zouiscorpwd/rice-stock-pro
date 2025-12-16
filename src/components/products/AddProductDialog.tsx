@@ -17,12 +17,13 @@ export function AddProductDialog() {
   const [unit, setUnit] = useState('kg');
   const [billerName, setBillerName] = useState('');
   const [billerPhone, setBillerPhone] = useState('');
-  const [totalAmount, setTotalAmount] = useState('');
+  const [pricePerBag, setPricePerBag] = useState('');
   const [paidAmount, setPaidAmount] = useState('');
   const { addProduct } = useInventory();
 
   const totalStock = weightPerUnit * (Number(quantity) || 0);
-  const balanceAmount = (Number(totalAmount) || 0) - (Number(paidAmount) || 0);
+  const totalAmount = (Number(pricePerBag) || 0) * (Number(quantity) || 0);
+  const balanceAmount = totalAmount - (Number(paidAmount) || 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +39,8 @@ export function AddProductDialog() {
       toast.error('Please enter valid quantity');
       return;
     }
-    if (!totalAmount || Number(totalAmount) <= 0) {
-      toast.error('Please enter valid total amount');
+    if (!pricePerBag || Number(pricePerBag) <= 0) {
+      toast.error('Please enter valid price per bag');
       return;
     }
     
@@ -50,7 +51,7 @@ export function AddProductDialog() {
       unit,
       billerName: billerName.trim(),
       billerPhone: billerPhone.trim() || undefined,
-      totalAmount: Number(totalAmount),
+      totalAmount: totalAmount,
       paidAmount: Number(paidAmount) || 0,
     });
     
@@ -65,7 +66,7 @@ export function AddProductDialog() {
     setUnit('kg');
     setBillerName('');
     setBillerPhone('');
-    setTotalAmount('');
+    setPricePerBag('');
     setPaidAmount('');
     setOpen(false);
   };
@@ -164,17 +165,23 @@ export function AddProductDialog() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="totalAmount">Total Amount *</Label>
+              <Label htmlFor="pricePerBag">Price/Bag *</Label>
               <Input
-                id="totalAmount"
+                id="pricePerBag"
                 type="number"
-                value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)}
-                placeholder="0"
+                value={pricePerBag}
+                onChange={(e) => setPricePerBag(e.target.value)}
+                placeholder="₹0"
                 min="0"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Total Amount</Label>
+              <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted text-muted-foreground font-medium">
+                ₹{totalAmount.toLocaleString()}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="paidAmount">Paid Amount</Label>
