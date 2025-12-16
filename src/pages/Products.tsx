@@ -72,10 +72,15 @@ export default function Products() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Biller Name</TableHead>
+                    <TableHead>Biller Phone</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead className="text-right">Weight/Bag</TableHead>
-                    <TableHead className="text-right">Quantity (Bags)</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Total Stock</TableHead>
+                    <TableHead className="text-right">Total Amount</TableHead>
+                    <TableHead className="text-right">Paid Amount</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -83,10 +88,17 @@ export default function Products() {
                 <TableBody>
                   {filteredProducts.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell className="font-medium">{product.billerName}</TableCell>
+                      <TableCell>{product.billerPhone || '-'}</TableCell>
+                      <TableCell>{product.name}</TableCell>
                       <TableCell className="text-right">{product.weightPerUnit} kg</TableCell>
                       <TableCell className="text-right">{product.quantity.toLocaleString()}</TableCell>
                       <TableCell className="text-right">{product.stock.toLocaleString()} {product.unit}</TableCell>
+                      <TableCell className="text-right">₹{product.totalAmount.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">₹{product.paidAmount.toLocaleString()}</TableCell>
+                      <TableCell className={`text-right ${product.balanceAmount > 0 ? 'text-destructive font-medium' : ''}`}>
+                        ₹{product.balanceAmount.toLocaleString()}
+                      </TableCell>
                       <TableCell>{getStockBadge(product.stock)}</TableCell>
                       <TableCell className="text-right">
                         <AlertDialog>

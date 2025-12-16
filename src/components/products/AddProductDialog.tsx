@@ -15,9 +15,14 @@ export function AddProductDialog() {
   const [weightPerUnit, setWeightPerUnit] = useState<WeightVariant>(5);
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('kg');
+  const [billerName, setBillerName] = useState('');
+  const [billerPhone, setBillerPhone] = useState('');
+  const [totalAmount, setTotalAmount] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
   const { addProduct } = useInventory();
 
   const totalStock = weightPerUnit * (Number(quantity) || 0);
+  const balanceAmount = (Number(totalAmount) || 0) - (Number(paidAmount) || 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +30,16 @@ export function AddProductDialog() {
       toast.error('Please enter product name');
       return;
     }
+    if (!billerName.trim()) {
+      toast.error('Please enter biller name');
+      return;
+    }
     if (!quantity || Number(quantity) <= 0) {
       toast.error('Please enter valid quantity');
+      return;
+    }
+    if (!totalAmount || Number(totalAmount) <= 0) {
+      toast.error('Please enter valid total amount');
       return;
     }
     
@@ -35,13 +48,25 @@ export function AddProductDialog() {
       weightPerUnit,
       quantity: Number(quantity),
       unit,
+      billerName: billerName.trim(),
+      billerPhone: billerPhone.trim() || undefined,
+      totalAmount: Number(totalAmount),
+      paidAmount: Number(paidAmount) || 0,
     });
     
     toast.success('Product added successfully');
+    resetForm();
+  };
+
+  const resetForm = () => {
     setName('');
     setWeightPerUnit(5);
     setQuantity('');
     setUnit('kg');
+    setBillerName('');
+    setBillerPhone('');
+    setTotalAmount('');
+    setPaidAmount('');
     setOpen(false);
   };
 
@@ -53,11 +78,32 @@ export function AddProductDialog() {
           Add Product
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="billerName">Biller Name *</Label>
+              <Input
+                id="billerName"
+                value={billerName}
+                onChange={(e) => setBillerName(e.target.value)}
+                placeholder="Enter biller name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="billerPhone">Biller Phone</Label>
+              <Input
+                id="billerPhone"
+                value={billerPhone}
+                onChange={(e) => setBillerPhone(e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Product Name *</Label>
             <Input
@@ -114,6 +160,37 @@ export function AddProductDialog() {
               <Label>Total Stock</Label>
               <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted text-muted-foreground font-medium">
                 {totalStock.toLocaleString()} kg
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="totalAmount">Total Amount *</Label>
+              <Input
+                id="totalAmount"
+                type="number"
+                value={totalAmount}
+                onChange={(e) => setTotalAmount(e.target.value)}
+                placeholder="0"
+                min="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paidAmount">Paid Amount</Label>
+              <Input
+                id="paidAmount"
+                type="number"
+                value={paidAmount}
+                onChange={(e) => setPaidAmount(e.target.value)}
+                placeholder="0"
+                min="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Balance Amount</Label>
+              <div className={`h-10 px-3 py-2 rounded-md border border-input font-medium ${balanceAmount > 0 ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
+                ₹{balanceAmount.toLocaleString()}
               </div>
             </div>
           </div>
