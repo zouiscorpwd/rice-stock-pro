@@ -8,6 +8,11 @@ export interface Product {
   quantity: number;
   stock: number;
   unit: string;
+  billerName: string;
+  billerPhone?: string;
+  totalAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
   createdAt: Date;
 }
 
