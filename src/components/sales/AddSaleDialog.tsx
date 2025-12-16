@@ -14,7 +14,7 @@ interface SaleItemForm {
   productName: string;
   weightPerUnit: number;
   quantity: string;
-  amount: string;
+  pricePerBag: string;
   availableQty: number;
 }
 
@@ -23,7 +23,7 @@ const emptyItem: SaleItemForm = {
   productName: '',
   weightPerUnit: 0,
   quantity: '',
-  amount: '',
+  pricePerBag: '',
   availableQty: 0,
 };
 
@@ -36,7 +36,11 @@ export function AddSaleDialog() {
   const [items, setItems] = useState<SaleItemForm[]>([{ ...emptyItem }]);
   const [paidAmount, setPaidAmount] = useState('');
 
-  const totalAmount = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+  const getItemAmount = (item: SaleItemForm) => {
+    return (Number(item.pricePerBag) || 0) * (Number(item.quantity) || 0);
+  };
+
+  const totalAmount = items.reduce((sum, item) => sum + getItemAmount(item), 0);
   const balance = Math.max(0, totalAmount - (Number(paidAmount) || 0));
 
   const handleProductChange = (index: number, productId: string) => {
@@ -78,7 +82,7 @@ export function AddSaleDialog() {
       return;
     }
 
-    const validItems = items.filter(item => item.productId && Number(item.quantity) > 0 && Number(item.amount) > 0);
+    const validItems = items.filter(item => item.productId && Number(item.quantity) > 0 && Number(item.pricePerBag) > 0);
     if (validItems.length === 0) {
       toast.error('Please add at least one valid item');
       return;
@@ -98,7 +102,7 @@ export function AddSaleDialog() {
       productName: item.productName,
       weightPerUnit: item.weightPerUnit,
       quantity: Number(item.quantity),
-      amount: Number(item.amount),
+      amount: getItemAmount(item),
     }));
 
     addSale({
@@ -182,7 +186,7 @@ export function AddSaleDialog() {
                         </Button>
                       )}
                     </div>
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-5 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Product *</Label>
                         <Select value={item.productId} onValueChange={(val) => handleProductChange(index, val)}>
@@ -220,14 +224,20 @@ export function AddSaleDialog() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Amount *</Label>
+                        <Label className="text-xs">Price/Bag *</Label>
                         <Input
                           type="number"
-                          value={item.amount}
-                          onChange={(e) => handleItemChange(index, 'amount', e.target.value)}
+                          value={item.pricePerBag}
+                          onChange={(e) => handleItemChange(index, 'pricePerBag', e.target.value)}
                           placeholder="₹0"
                           className="h-9"
                         />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Amount</Label>
+                        <div className="h-9 px-3 py-2 rounded-md border border-input bg-muted text-sm text-muted-foreground">
+                          ₹{getItemAmount(item).toLocaleString()}
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -12,7 +12,7 @@ import { PurchaseItem } from '@/types/inventory';
 interface ItemInput {
   productId: string;
   quantity: number;
-  amount: number;
+  pricePerBag: number;
 }
 
 export function AddPurchaseDialog() {
@@ -21,11 +21,11 @@ export function AddPurchaseDialog() {
   
   const [billerName, setBillerName] = useState('');
   const [billerPhone, setBillerPhone] = useState('');
-  const [items, setItems] = useState<ItemInput[]>([{ productId: '', quantity: 0, amount: 0 }]);
+  const [items, setItems] = useState<ItemInput[]>([{ productId: '', quantity: 0, pricePerBag: 0 }]);
   const [paidAmount, setPaidAmount] = useState('');
 
   const addItem = () => {
-    setItems([...items, { productId: '', quantity: 0, amount: 0 }]);
+    setItems([...items, { productId: '', quantity: 0, pricePerBag: 0 }]);
   };
 
   const removeItem = (index: number) => {
@@ -40,8 +40,12 @@ export function AddPurchaseDialog() {
     setItems(newItems);
   };
 
+  const getItemAmount = (item: ItemInput) => {
+    return (Number(item.pricePerBag) || 0) * (Number(item.quantity) || 0);
+  };
+
   const getTotalAmount = () => {
-    return items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    return items.reduce((sum, item) => sum + getItemAmount(item), 0);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,7 +56,7 @@ export function AddPurchaseDialog() {
       return;
     }
 
-    const validItems = items.filter(item => item.productId && item.quantity > 0 && item.amount > 0);
+    const validItems = items.filter(item => item.productId && item.quantity > 0 && item.pricePerBag > 0);
     
     if (validItems.length === 0) {
       toast.error('Please add at least one item');
@@ -66,7 +70,7 @@ export function AddPurchaseDialog() {
         productName: product.name,
         weightPerUnit: product.weightPerUnit,
         quantity: item.quantity,
-        amount: item.amount,
+        amount: getItemAmount(item),
       };
     });
 
@@ -85,7 +89,7 @@ export function AddPurchaseDialog() {
   const resetForm = () => {
     setBillerName('');
     setBillerPhone('');
-    setItems([{ productId: '', quantity: 0, amount: 0 }]);
+    setItems([{ productId: '', quantity: 0, pricePerBag: 0 }]);
     setPaidAmount('');
   };
 
@@ -150,7 +154,7 @@ export function AddPurchaseDialog() {
                     </Button>
                   )}
                   
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-4 gap-3">
                     <div className="space-y-2">
                       <Label>Product *</Label>
                       <Select 
@@ -187,14 +191,21 @@ export function AddPurchaseDialog() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label>Amount *</Label>
+                      <Label>Price/Bag *</Label>
                       <Input
                         type="number"
                         min="0"
-                        value={item.amount || ''}
-                        onChange={(e) => updateItem(index, 'amount', Number(e.target.value))}
+                        value={item.pricePerBag || ''}
+                        onChange={(e) => updateItem(index, 'pricePerBag', Number(e.target.value))}
                         placeholder="₹0"
                       />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Amount</Label>
+                      <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted text-muted-foreground text-sm">
+                        ₹{getItemAmount(item).toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 </div>
