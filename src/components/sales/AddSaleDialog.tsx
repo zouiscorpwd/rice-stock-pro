@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
-import { useInventory } from '@/context/InventoryContext';
+import { useProducts } from '@/hooks/useProducts';
+import { useCreateSale } from '@/hooks/useSales';
 import { toast } from 'sonner';
-import { SaleItem } from '@/types/inventory';
 
 interface SaleItemForm {
   productId: string;
@@ -29,7 +29,8 @@ const emptyItem: SaleItemForm = {
 
 export function AddSaleDialog() {
   const [open, setOpen] = useState(false);
-  const { products, addSale } = useInventory();
+  const { data: products = [] } = useProducts();
+  const createSale = useCreateSale();
   
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -51,7 +52,7 @@ export function AddSaleDialog() {
           ...item, 
           productId, 
           productName: product.name, 
-          weightPerUnit: product.weightPerUnit,
+          weightPerUnit: product.weight_per_unit,
           availableQty: product.quantity 
         } : item
       ));
@@ -97,24 +98,23 @@ export function AddSaleDialog() {
       }
     }
 
-    const saleItems: Omit<SaleItem, 'weight'>[] = validItems.map(item => ({
-      productId: item.productId,
-      productName: item.productName,
-      weightPerUnit: item.weightPerUnit,
-      quantity: Number(item.quantity),
-      amount: getItemAmount(item),
-    }));
-
-    addSale({
-      customerName: customerName.trim(),
-      customerPhone: customerPhone.trim() || undefined,
-      items: saleItems,
-      paidAmount: Number(paidAmount) || 0,
+    createSale.mutate({
+      customer_name: customerName.trim(),
+      customer_phone: customerPhone.trim() || undefined,
+      items: validItems.map(item => ({
+        product_id: item.productId,
+        product_name: item.productName,
+        weight_per_unit: item.weightPerUnit,
+        quantity: Number(item.quantity),
+        amount: getItemAmount(item),
+      })),
+      paid_amount: Number(paidAmount) || 0,
+    }, {
+      onSuccess: () => {
+        resetForm();
+        setOpen(false);
+      }
     });
-
-    toast.success('Sale recorded successfully');
-    resetForm();
-    setOpen(false);
   };
 
   const resetForm = () => {
@@ -196,7 +196,7 @@ export function AddSaleDialog() {
                           <SelectContent>
                             {products.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
-                                {p.name} ({p.weightPerUnit}kg - {p.quantity} bags)
+                                {p.name} ({p.weight_per_unit}kg - {p.quantity} bags)
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -275,7 +275,9 @@ export function AddSaleDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add Sale</Button>
+            <Button type="submit" disabled={createSale.isPending}>
+              {createSale.isPending ? 'Adding...' : 'Add Sale'}
+            </Button>
           </div>
         </form>
       </DialogContent>

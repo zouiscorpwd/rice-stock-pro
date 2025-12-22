@@ -3,19 +3,43 @@ import { PageHeader } from '@/components/ui/page-header';
 import { AddSaleDialog } from '@/components/sales/AddSaleDialog';
 import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
 import { SalesInvoice } from '@/components/sales/SalesInvoice';
-import { useInventory } from '@/context/InventoryContext';
+import { useSales, useAddSalePayment, Sale } from '@/hooks/useSales';
+import { Sale as InventorySale } from '@/types/inventory';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, TrendingUp, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { Search, Plus, TrendingUp, ChevronDown, ChevronUp, FileText, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import React from 'react';
-import type { Sale } from '@/types/inventory';
+
+// Transform database sale to invoice format
+function transformSaleForInvoice(sale: Sale): InventorySale {
+  return {
+    id: sale.id,
+    customerName: sale.customer_name,
+    customerPhone: sale.customer_phone || undefined,
+    totalAmount: sale.total_amount,
+    paidAmount: sale.paid_amount,
+    balanceAmount: sale.balance_amount,
+    createdAt: new Date(sale.created_at),
+    payments: [], // Payments are tracked separately in the database
+    items: sale.items.map(item => ({
+      productId: item.product_id,
+      productName: item.product_name,
+      weightPerUnit: item.weight_per_unit,
+      quantity: item.quantity,
+      weight: item.weight,
+      amount: item.amount,
+    })),
+  };
+}
 
 export default function Sales() {
-  const { sales, addPaymentToSale } = useInventory();
+  const { data: sales = [], isLoading } = useSales();
+  const addPayment = useAddSalePayment();
+  
   const [search, setSearch] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [paymentDialog, setPaymentDialog] = useState<{
@@ -26,12 +50,12 @@ export default function Sales() {
   }>({ open: false, saleId: '', customerName: '', balanceAmount: 0 });
   const [invoiceDialog, setInvoiceDialog] = useState<{
     open: boolean;
-    sale: Sale | null;
+    sale: InventorySale | null;
   }>({ open: false, sale: null });
 
   const filteredSales = sales.filter(sale =>
-    sale.customerName.toLowerCase().includes(search.toLowerCase()) ||
-    sale.items.some(item => item.productName.toLowerCase().includes(search.toLowerCase()))
+    sale.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+    sale.items.some(item => item.product_name.toLowerCase().includes(search.toLowerCase()))
   );
 
   const toggleRow = (id: string) => {
@@ -46,25 +70,37 @@ export default function Sales() {
     });
   };
 
-  const openPaymentDialog = (sale: typeof sales[0]) => {
+  const openPaymentDialog = (sale: Sale) => {
     setPaymentDialog({
       open: true,
       saleId: sale.id,
-      customerName: sale.customerName,
-      balanceAmount: sale.balanceAmount,
+      customerName: sale.customer_name,
+      balanceAmount: sale.balance_amount,
     });
   };
 
-  const getTotalWeight = (items: typeof sales[0]['items']) => {
+  const handleAddPayment = (billId: string, payment: { amount: number; date: Date; note?: string }) => {
+    addPayment.mutate({ saleId: billId, amount: payment.amount, note: payment.note });
+  };
+
+  const getTotalWeight = (items: Sale['items']) => {
     return items.reduce((sum, item) => sum + item.weight, 0);
   };
 
-  const getItemsSummary = (items: typeof sales[0]['items']) => {
+  const getItemsSummary = (items: Sale['items']) => {
     if (items.length === 1) {
-      return `${items[0].productName} (${items[0].quantity} bags)`;
+      return `${items[0].product_name} (${items[0].quantity} bags)`;
     }
     return `${items.length} items`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -121,16 +157,16 @@ export default function Sales() {
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
                           )}
                         </TableCell>
-                        <TableCell>{format(new Date(sale.createdAt), 'dd/MM/yyyy')}</TableCell>
-                        <TableCell className="font-medium">{sale.customerName}</TableCell>
-                        <TableCell>{sale.customerPhone || '-'}</TableCell>
+                        <TableCell>{format(new Date(sale.created_at), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell className="font-medium">{sale.customer_name}</TableCell>
+                        <TableCell>{sale.customer_phone || '-'}</TableCell>
                         <TableCell>{getItemsSummary(sale.items)}</TableCell>
                         <TableCell className="text-right">{getTotalWeight(sale.items)} kg</TableCell>
-                        <TableCell className="text-right">₹{sale.totalAmount.toLocaleString()}</TableCell>
-                        <TableCell className="text-right text-success">₹{sale.paidAmount.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">₹{sale.total_amount.toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-success">₹{sale.paid_amount.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
-                          {sale.balanceAmount > 0 ? (
-                            <Badge variant="destructive">₹{sale.balanceAmount.toLocaleString()}</Badge>
+                          {sale.balance_amount > 0 ? (
+                            <Badge variant="destructive">₹{sale.balance_amount.toLocaleString()}</Badge>
                           ) : (
                             <Badge className="bg-success text-success-foreground">Paid</Badge>
                           )}
@@ -140,13 +176,13 @@ export default function Sales() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={(e) => { e.stopPropagation(); setInvoiceDialog({ open: true, sale }); }}
+                              onClick={(e) => { e.stopPropagation(); setInvoiceDialog({ open: true, sale: transformSaleForInvoice(sale) }); }}
                               className="gap-1"
                             >
                               <FileText className="h-3 w-3" />
                               Invoice
                             </Button>
-                            {sale.balanceAmount > 0 && (
+                            {sale.balance_amount > 0 && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -166,9 +202,9 @@ export default function Sales() {
                             <TableCell></TableCell>
                             <TableCell></TableCell>
                             <TableCell colSpan={2} className="text-muted-foreground text-sm pl-8">
-                              └ {item.productName}
+                              └ {item.product_name}
                             </TableCell>
-                            <TableCell className="text-sm">{item.quantity} bags × {item.weightPerUnit}kg</TableCell>
+                            <TableCell className="text-sm">{item.quantity} bags × {item.weight_per_unit}kg</TableCell>
                             <TableCell className="text-right text-sm">{item.weight} kg</TableCell>
                             <TableCell className="text-right text-sm">₹{item.amount.toLocaleString()}</TableCell>
                             <TableCell colSpan={3}></TableCell>
@@ -191,7 +227,7 @@ export default function Sales() {
         billType="sale"
         partyName={paymentDialog.customerName}
         balanceAmount={paymentDialog.balanceAmount}
-        onAddPayment={addPaymentToSale}
+        onAddPayment={handleAddPayment}
       />
 
       <SalesInvoice
