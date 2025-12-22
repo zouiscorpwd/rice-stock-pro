@@ -5,7 +5,7 @@ interface InventoryContextType {
   products: Product[];
   purchases: Purchase[];
   sales: Sale[];
-  addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'stock' | 'balanceAmount'>) => void;
+  addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'stock'>) => void;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   addPurchase: (purchase: { billerName: string; billerPhone?: string; items: Omit<PurchaseItem, 'weight'>[]; paidAmount: number }) => void;
@@ -18,9 +18,9 @@ const InventoryContext = createContext<InventoryContextType | undefined>(undefin
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([
-    { id: '1', name: 'Basmati Rice', weightPerUnit: 26, quantity: 20, stock: 520, unit: 'kg', billerName: 'Rice Supplier Co.', billerPhone: '9876543210', totalAmount: 26000, paidAmount: 20000, balanceAmount: 6000, createdAt: new Date() },
-    { id: '2', name: 'Sona Masoori', weightPerUnit: 10, quantity: 30, stock: 300, unit: 'kg', billerName: 'Farm Fresh', billerPhone: '9123456789', totalAmount: 15000, paidAmount: 15000, balanceAmount: 0, createdAt: new Date() },
-    { id: '3', name: 'Brown Rice', weightPerUnit: 5, quantity: 30, stock: 150, unit: 'kg', billerName: 'Organic Mills', billerPhone: '9988776655', totalAmount: 9000, paidAmount: 5000, balanceAmount: 4000, createdAt: new Date() },
+    { id: '1', name: 'Basmati Rice', weightPerUnit: 26, quantity: 20, stock: 520, unit: 'kg', lowStockAlert: 100, createdAt: new Date() },
+    { id: '2', name: 'Sona Masoori', weightPerUnit: 10, quantity: 30, stock: 300, unit: 'kg', lowStockAlert: 50, createdAt: new Date() },
+    { id: '3', name: 'Brown Rice', weightPerUnit: 5, quantity: 30, stock: 150, unit: 'kg', lowStockAlert: 30, createdAt: new Date() },
   ]);
   
   const [purchases, setPurchases] = useState<Purchase[]>([
@@ -51,12 +51,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     }
   ]);
 
-  const addProduct = (product: Omit<Product, 'id' | 'createdAt' | 'stock' | 'balanceAmount'>) => {
+  const addProduct = (product: Omit<Product, 'id' | 'createdAt' | 'stock'>) => {
     const newProduct: Product = {
       ...product,
       id: Date.now().toString(),
-      stock: product.weightPerUnit * product.quantity,
-      balanceAmount: product.totalAmount - product.paidAmount,
+      stock: 0,
       createdAt: new Date(),
     };
     setProducts(prev => [...prev, newProduct]);

@@ -34,9 +34,9 @@ export default function Products() {
     toast.success('Product deleted successfully');
   };
 
-  const getStockBadge = (stock: number) => {
+  const getStockBadge = (stock: number, lowStockAlert: number) => {
     if (stock === 0) return <Badge variant="destructive">Out of Stock</Badge>;
-    if (stock < 100) return <Badge className="bg-warning text-warning-foreground">Low Stock</Badge>;
+    if (stock <= lowStockAlert) return <Badge className="bg-warning text-warning-foreground">Low Stock</Badge>;
     return <Badge className="bg-success text-success-foreground">In Stock</Badge>;
   };
 
@@ -72,15 +72,11 @@ export default function Products() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Biller Name</TableHead>
-                    <TableHead>Biller Phone</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead className="text-right">Weight/Bag</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Total Stock</TableHead>
-                    <TableHead className="text-right">Total Amount</TableHead>
-                    <TableHead className="text-right">Paid Amount</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead className="text-right">Low Stock Alert</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -88,18 +84,12 @@ export default function Products() {
                 <TableBody>
                   {filteredProducts.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.billerName}</TableCell>
-                      <TableCell>{product.billerPhone || '-'}</TableCell>
-                      <TableCell>{product.name}</TableCell>
+                      <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell className="text-right">{product.weightPerUnit} kg</TableCell>
                       <TableCell className="text-right">{product.quantity.toLocaleString()}</TableCell>
                       <TableCell className="text-right">{product.stock.toLocaleString()} {product.unit}</TableCell>
-                      <TableCell className="text-right">₹{product.totalAmount.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">₹{product.paidAmount.toLocaleString()}</TableCell>
-                      <TableCell className={`text-right ${product.balanceAmount > 0 ? 'text-destructive font-medium' : ''}`}>
-                        ₹{product.balanceAmount.toLocaleString()}
-                      </TableCell>
-                      <TableCell>{getStockBadge(product.stock)}</TableCell>
+                      <TableCell className="text-right">{product.lowStockAlert.toLocaleString()} kg</TableCell>
+                      <TableCell>{getStockBadge(product.stock, product.lowStockAlert)}</TableCell>
                       <TableCell className="text-right">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
