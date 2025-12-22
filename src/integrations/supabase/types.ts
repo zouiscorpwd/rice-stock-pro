@@ -63,6 +63,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          low_stock_alert: number
           name: string
           quantity: number
           stock: number
@@ -74,6 +75,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          low_stock_alert?: number
           name: string
           quantity?: number
           stock?: number
@@ -85,6 +87,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          low_stock_alert?: number
           name?: string
           quantity?: number
           stock?: number

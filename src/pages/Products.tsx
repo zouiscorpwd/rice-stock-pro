@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { AddProductDialog } from '@/components/products/AddProductDialog';
-import { useInventory } from '@/context/InventoryContext';
+import { useProducts, useDeleteProduct } from '@/hooks/useProducts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Package } from 'lucide-react';
-import { toast } from 'sonner';
+import { Search, Trash2, Package, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +21,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function Products() {
-  const { products, deleteProduct } = useInventory();
+  const { data: products = [], isLoading } = useProducts();
+  const deleteProduct = useDeleteProduct();
   const [search, setSearch] = useState('');
 
   const filteredProducts = products.filter(product =>
@@ -30,8 +30,7 @@ export default function Products() {
   );
 
   const handleDelete = (id: string) => {
-    deleteProduct(id);
-    toast.success('Product deleted successfully');
+    deleteProduct.mutate(id);
   };
 
   const getStockBadge = (stock: number, lowStockAlert: number) => {
@@ -39,6 +38,14 @@ export default function Products() {
     if (stock <= lowStockAlert) return <Badge className="bg-warning text-warning-foreground">Low Stock</Badge>;
     return <Badge className="bg-success text-success-foreground">In Stock</Badge>;
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -85,11 +92,11 @@ export default function Products() {
                   {filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell className="text-right">{product.weightPerUnit} kg</TableCell>
+                      <TableCell className="text-right">{product.weight_per_unit} kg</TableCell>
                       <TableCell className="text-right">{product.quantity.toLocaleString()}</TableCell>
                       <TableCell className="text-right">{product.stock.toLocaleString()} {product.unit}</TableCell>
-                      <TableCell className="text-right">{product.lowStockAlert.toLocaleString()} kg</TableCell>
-                      <TableCell>{getStockBadge(product.stock, product.lowStockAlert)}</TableCell>
+                      <TableCell className="text-right">{product.low_stock_alert.toLocaleString()} kg</TableCell>
+                      <TableCell>{getStockBadge(product.stock, product.low_stock_alert)}</TableCell>
                       <TableCell className="text-right">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
