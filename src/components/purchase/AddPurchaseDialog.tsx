@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
-import { useInventory } from '@/context/InventoryContext';
+import { useProducts } from '@/hooks/useProducts';
+import { useCreatePurchase } from '@/hooks/usePurchases';
 import { toast } from 'sonner';
-import { PurchaseItem } from '@/types/inventory';
 
 interface ItemInput {
   productId: string;
@@ -17,7 +17,8 @@ interface ItemInput {
 
 export function AddPurchaseDialog() {
   const [open, setOpen] = useState(false);
-  const { products, addPurchase } = useInventory();
+  const { data: products = [] } = useProducts();
+  const createPurchase = useCreatePurchase();
   
   const [billerName, setBillerName] = useState('');
   const [billerPhone, setBillerPhone] = useState('');
@@ -63,27 +64,26 @@ export function AddPurchaseDialog() {
       return;
     }
 
-    const purchaseItems: Omit<PurchaseItem, 'weight'>[] = validItems.map(item => {
-      const product = products.find(p => p.id === item.productId)!;
-      return {
-        productId: item.productId,
-        productName: product.name,
-        weightPerUnit: product.weightPerUnit,
-        quantity: item.quantity,
-        amount: getItemAmount(item),
-      };
+    createPurchase.mutate({
+      biller_name: billerName.trim(),
+      biller_phone: billerPhone.trim() || undefined,
+      items: validItems.map(item => {
+        const product = products.find(p => p.id === item.productId)!;
+        return {
+          product_id: item.productId,
+          product_name: product.name,
+          weight_per_unit: product.weight_per_unit,
+          quantity: item.quantity,
+          amount: getItemAmount(item),
+        };
+      }),
+      paid_amount: Number(paidAmount) || 0,
+    }, {
+      onSuccess: () => {
+        resetForm();
+        setOpen(false);
+      }
     });
-
-    addPurchase({
-      billerName: billerName.trim(),
-      billerPhone: billerPhone.trim() || undefined,
-      items: purchaseItems,
-      paidAmount: Number(paidAmount) || 0,
-    });
-
-    toast.success('Purchase added successfully');
-    resetForm();
-    setOpen(false);
   };
 
   const resetForm = () => {
@@ -138,7 +138,7 @@ export function AddPurchaseDialog() {
 
             {items.map((item, index) => {
               const selectedProduct = products.find(p => p.id === item.productId);
-              const totalWeight = selectedProduct ? selectedProduct.weightPerUnit * item.quantity : 0;
+              const totalWeight = selectedProduct ? selectedProduct.weight_per_unit * item.quantity : 0;
 
               return (
                 <div key={index} className="border rounded-lg p-4 space-y-3 relative">
@@ -167,7 +167,7 @@ export function AddPurchaseDialog() {
                         <SelectContent>
                           {products.map((product) => (
                             <SelectItem key={product.id} value={product.id}>
-                              {product.name} ({product.weightPerUnit}kg)
+                              {product.name} ({product.weight_per_unit}kg)
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -242,7 +242,9 @@ export function AddPurchaseDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add Purchase</Button>
+            <Button type="submit" disabled={createPurchase.isPending}>
+              {createPurchase.isPending ? 'Adding...' : 'Add Purchase'}
+            </Button>
           </div>
         </form>
       </DialogContent>
