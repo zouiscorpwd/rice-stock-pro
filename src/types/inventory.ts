@@ -1,4 +1,4 @@
-export const WEIGHT_VARIANTS = [5, 10, 26] as const;
+export const WEIGHT_VARIANTS = [1, 5, 10, 25, 26, 30, 50, 75] as const;
 export type WeightVariant = typeof WEIGHT_VARIANTS[number];
 
 export interface Product {
@@ -8,11 +8,7 @@ export interface Product {
   quantity: number;
   stock: number;
   unit: string;
-  billerName: string;
-  billerPhone?: string;
-  totalAmount: number;
-  paidAmount: number;
-  balanceAmount: number;
+  lowStockAlert: number;
   createdAt: Date;
 }
 
