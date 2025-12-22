@@ -5,16 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { useInventory } from '@/context/InventoryContext';
-import { WEIGHT_VARIANTS, WeightVariant } from '@/types/inventory';
+import { useCreateProduct } from '@/hooks/useProducts';
 import { toast } from 'sonner';
+
+const WEIGHT_VARIANTS = [1, 5, 10, 25, 26, 30, 50, 75] as const;
 
 export function AddProductDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
-  const [weightPerUnit, setWeightPerUnit] = useState<WeightVariant>(5);
+  const [weightPerUnit, setWeightPerUnit] = useState<number>(5);
   const [lowStockAlert, setLowStockAlert] = useState('');
-  const { addProduct } = useInventory();
+  
+  const createProduct = useCreateProduct();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,16 +29,15 @@ export function AddProductDialog() {
       return;
     }
     
-    addProduct({
+    createProduct.mutate({
       name: name.trim(),
-      weightPerUnit,
-      quantity: 0,
-      unit: 'kg',
-      lowStockAlert: Number(lowStockAlert),
+      weight_per_unit: weightPerUnit,
+      low_stock_alert: Number(lowStockAlert),
+    }, {
+      onSuccess: () => {
+        resetForm();
+      }
     });
-    
-    toast.success('Product added successfully');
-    resetForm();
   };
 
   const resetForm = () => {
@@ -73,7 +74,7 @@ export function AddProductDialog() {
             <Label htmlFor="weightPerUnit">Weight per Bag (kg) *</Label>
             <Select 
               value={weightPerUnit.toString()} 
-              onValueChange={(val) => setWeightPerUnit(Number(val) as WeightVariant)}
+              onValueChange={(val) => setWeightPerUnit(Number(val))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select weight" />
@@ -104,7 +105,9 @@ export function AddProductDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add Product</Button>
+            <Button type="submit" disabled={createProduct.isPending}>
+              {createProduct.isPending ? 'Adding...' : 'Add Product'}
+            </Button>
           </div>
         </form>
       </DialogContent>
