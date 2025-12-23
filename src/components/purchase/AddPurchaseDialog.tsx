@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ProductCombobox } from '@/components/ui/product-combobox';
 import { Plus, X } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCreatePurchase } from '@/hooks/usePurchases';
@@ -157,21 +157,13 @@ export function AddPurchaseDialog() {
                   <div className="grid grid-cols-4 gap-3">
                     <div className="space-y-2">
                       <Label>Product *</Label>
-                      <Select 
-                        value={item.productId} 
-                        onValueChange={(value) => updateItem(index, 'productId', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select product" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map((product) => (
-                            <SelectItem key={product.id} value={product.id}>
-                              {product.name} ({product.weight_per_unit}kg)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <ProductCombobox
+                        products={products}
+                        value={item.productId}
+                        onSelect={(value) => updateItem(index, 'productId', value)}
+                        placeholder="Type to search..."
+                        showStock={false}
+                      />
                     </div>
                     
                     <div className="space-y-2">

@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      loose_stock: {
+        Row: {
+          bags_converted: number
+          created_at: string
+          id: string
+          loose_quantity: number
+          product_id: string
+          product_name: string
+          updated_at: string
+          user_id: string
+          weight_per_unit: number
+        }
+        Insert: {
+          bags_converted?: number
+          created_at?: string
+          id?: string
+          loose_quantity?: number
+          product_id: string
+          product_name: string
+          updated_at?: string
+          user_id: string
+          weight_per_unit: number
+        }
+        Update: {
+          bags_converted?: number
+          created_at?: string
+          id?: string
+          loose_quantity?: number
+          product_id?: string
+          product_name?: string
+          updated_at?: string
+          user_id?: string
+          weight_per_unit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loose_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
