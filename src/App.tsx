@@ -11,6 +11,7 @@ import Products from "./pages/Products";
 import Purchase from "./pages/Purchase";
 import Sales from "./pages/Sales";
 import Reports from "./pages/Reports";
+import Loose from "./pages/Loose";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/products" element={<ProtectedRoute><MainLayout><Products /></MainLayout></ProtectedRoute>} />
             <Route path="/purchase" element={<ProtectedRoute><MainLayout><Purchase /></MainLayout></ProtectedRoute>} />
             <Route path="/sales" element={<ProtectedRoute><MainLayout><Sales /></MainLayout></ProtectedRoute>} />
+            <Route path="/loose" element={<ProtectedRoute><MainLayout><Loose /></MainLayout></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

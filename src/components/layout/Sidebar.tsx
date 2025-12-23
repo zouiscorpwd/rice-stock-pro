@@ -6,7 +6,8 @@ import {
   TrendingUp, 
   FileText,
   Wheat,
-  LogOut
+  LogOut,
+  Scale
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,7 @@ const navigation = [
   { name: 'Products', href: '/products', icon: Package },
   { name: 'Purchase', href: '/purchase', icon: ShoppingCart },
   { name: 'Sales', href: '/sales', icon: TrendingUp },
+  { name: 'Loose', href: '/loose', icon: Scale },
   { name: 'Reports', href: '/reports', icon: FileText },
 ];
 

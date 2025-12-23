@@ -8,13 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Search, FileText, Plus } from 'lucide-react';
+import { Search, FileText, Plus, Scale } from 'lucide-react';
 import { format } from 'date-fns';
 import { BillerReport, CustomerReport } from '@/types/inventory';
 import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
+import { useLooseStock } from '@/hooks/useLooseStock';
 
 export default function Reports() {
   const { purchases, sales, addPaymentToPurchase, addPaymentToSale } = useInventory();
+  const { data: looseStock = [] } = useLooseStock();
   const [purchaseSearch, setPurchaseSearch] = useState('');
   const [salesSearch, setSalesSearch] = useState('');
   const [paymentDialog, setPaymentDialog] = useState<{
@@ -126,9 +128,10 @@ export default function Reports() {
       />
 
       <Tabs defaultValue="purchase" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="purchase">Purchase Report</TabsTrigger>
           <TabsTrigger value="sales">Sales Report</TabsTrigger>
+          <TabsTrigger value="loose">Loose Report</TabsTrigger>
         </TabsList>
 
         <TabsContent value="purchase">
@@ -384,6 +387,75 @@ export default function Reports() {
                     </AccordionItem>
                   ))}
                 </Accordion>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="loose">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Scale className="h-5 w-5 text-primary" />
+                Loose Stock Report
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {looseStock.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">No loose stock data found</p>
+              ) : (
+                <div className="space-y-6">
+                  {/* Summary */}
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Total Products</p>
+                      <p className="text-2xl font-bold">{looseStock.length}</p>
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Total Bags Converted</p>
+                      <p className="text-2xl font-bold">{looseStock.reduce((acc, l) => acc + l.bags_converted, 0)}</p>
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Total Loose Quantity</p>
+                      <p className="text-2xl font-bold">{looseStock.reduce((acc, l) => acc + Number(l.loose_quantity), 0).toLocaleString()} kg</p>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead className="text-center">Weight/Unit</TableHead>
+                        <TableHead className="text-center">Bags Converted</TableHead>
+                        <TableHead className="text-center">Original Qty (kg)</TableHead>
+                        <TableHead className="text-right">Current Loose (kg)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {looseStock.map((item) => {
+                        const originalQty = item.bags_converted * item.weight_per_unit;
+                        const used = originalQty - Number(item.loose_quantity);
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.product_name}</TableCell>
+                            <TableCell className="text-center">{item.weight_per_unit} kg</TableCell>
+                            <TableCell className="text-center">{item.bags_converted}</TableCell>
+                            <TableCell className="text-center">{originalQty.toLocaleString()} kg</TableCell>
+                            <TableCell className="text-right">
+                              <div>
+                                <span className="font-medium text-primary">{Number(item.loose_quantity).toLocaleString()} kg</span>
+                                {used > 0 && (
+                                  <span className="text-xs text-muted-foreground ml-2">({used.toLocaleString()} kg used)</span>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

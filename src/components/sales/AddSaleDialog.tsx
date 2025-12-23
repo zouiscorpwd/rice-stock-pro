@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ProductCombobox } from '@/components/ui/product-combobox';
 import { Plus, Trash2 } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCreateSale } from '@/hooks/useSales';
@@ -189,18 +189,12 @@ export function AddSaleDialog() {
                     <div className="grid grid-cols-5 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Product *</Label>
-                        <Select value={item.productId} onValueChange={(val) => handleProductChange(index, val)}>
-                          <SelectTrigger className="h-9">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name} ({p.weight_per_unit}kg - {p.quantity} bags)
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <ProductCombobox
+                          products={products}
+                          value={item.productId}
+                          onSelect={(val) => handleProductChange(index, val)}
+                          placeholder="Type to search..."
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Quantity (Bags) *</Label>
