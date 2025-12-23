@@ -6,14 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PackageOpen, Scale, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { PackageOpen, Scale, Loader2, Receipt } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useLooseStock, useMakeLoose } from '@/hooks/useLooseStock';
+import { useLooseSales } from '@/hooks/useLooseSales';
+import { AddRetailBillDialog } from '@/components/loose/AddRetailBillDialog';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export default function Loose() {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: looseStock = [], isLoading: looseLoading } = useLooseStock();
+  const { data: looseSales = [], isLoading: salesLoading } = useLooseSales();
   const makeLoose = useMakeLoose();
 
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -48,7 +53,7 @@ export default function Loose() {
     });
   };
 
-  if (productsLoading || looseLoading) {
+  if (productsLoading || looseLoading || salesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -56,14 +61,22 @@ export default function Loose() {
     );
   }
 
+  const getItemsSummary = (items: { product_name: string; quantity_kg: number }[]) => {
+    if (!items || items.length === 0) return 'No items';
+    if (items.length === 1) return `${items[0].product_name} - ${items[0].quantity_kg} kg`;
+    const totalWeight = items.reduce((sum, i) => sum + Number(i.quantity_kg), 0);
+    return `${items.length} items - ${totalWeight} kg`;
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader
         title="Loose Stock"
-        description="Convert bags to loose quantity for loose selling"
+        description="Convert bags to loose quantity for retail selling"
+        action={<AddRetailBillDialog />}
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 mb-6">
         {/* Make Loose Panel */}
         <Card className="shadow-card">
           <CardHeader>
@@ -164,6 +177,65 @@ export default function Loose() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Retail Sales History */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-primary" />
+            Retail Sales (Loose)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {looseSales.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No retail sales yet</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Paid</TableHead>
+                  <TableHead className="text-right">Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {looseSales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell>{format(new Date(sale.created_at), 'dd/MM/yyyy')}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{sale.customer_name}</p>
+                        {sale.customer_phone && (
+                          <p className="text-xs text-muted-foreground">{sale.customer_phone}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {getItemsSummary(sale.items)}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      ₹{Number(sale.total_amount).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right text-success">
+                      ₹{Number(sale.paid_amount).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {Number(sale.balance_amount) > 0 ? (
+                        <Badge variant="destructive">₹{Number(sale.balance_amount).toLocaleString()}</Badge>
+                      ) : (
+                        <Badge className="bg-success text-success-foreground">Paid</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

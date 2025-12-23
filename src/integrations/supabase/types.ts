@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      loose_sale_items: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          loose_sale_id: string
+          loose_stock_id: string
+          price_per_kg: number
+          product_name: string
+          quantity_kg: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          loose_sale_id: string
+          loose_stock_id: string
+          price_per_kg: number
+          product_name: string
+          quantity_kg: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          loose_sale_id?: string
+          loose_stock_id?: string
+          price_per_kg?: number
+          product_name?: string
+          quantity_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loose_sale_items_loose_sale_id_fkey"
+            columns: ["loose_sale_id"]
+            isOneToOne: false
+            referencedRelation: "loose_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loose_sale_items_loose_stock_id_fkey"
+            columns: ["loose_stock_id"]
+            isOneToOne: false
+            referencedRelation: "loose_stock"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loose_sales: {
+        Row: {
+          balance_amount: number
+          created_at: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          paid_amount: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_amount: number
+          created_at?: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          paid_amount?: number
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_amount?: number
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          paid_amount?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       loose_stock: {
         Row: {
           bags_converted: number
