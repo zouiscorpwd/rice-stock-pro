@@ -33,15 +33,13 @@ export default function Products() {
     deleteProduct.mutate(id);
   };
 
-  const getStockBadge = (quantity: number, stock: number, lowStockAlert: number) => {
-    if (quantity === 0 || stock === 0) return <Badge variant="destructive">Out of Stock</Badge>;
-    if (stock <= lowStockAlert) return <Badge className="bg-warning text-warning-foreground">Low Stock</Badge>;
+  const getStockBadge = (quantity: number, lowStockAlert: number) => {
+    if (quantity === 0) return <Badge variant="destructive">Out of Stock</Badge>;
+    if (quantity <= lowStockAlert) return <Badge className="bg-warning text-warning-foreground">Low Stock</Badge>;
     return <Badge className="bg-success text-success-foreground">In Stock</Badge>;
   };
-
-  const isLowQuantity = (quantity: number) => quantity > 0 && quantity <= 5;
   
-  const lowStockProducts = products.filter(p => p.stock <= p.low_stock_alert || p.quantity <= 5);
+  const lowStockProducts = products.filter(p => p.quantity <= p.low_stock_alert);
 
   if (isLoading) {
     return (
@@ -101,9 +99,9 @@ export default function Products() {
                   <TableRow>
                     <TableHead>Product Name</TableHead>
                     <TableHead className="text-right">Weight/Bag</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Total Stock</TableHead>
-                    <TableHead className="text-right">Low Stock Alert</TableHead>
+                    <TableHead className="text-right">Quantity (Bags)</TableHead>
+                    <TableHead className="text-right">Total Stock (kg)</TableHead>
+                    <TableHead className="text-right">Low Stock Alert (Bags)</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -115,17 +113,17 @@ export default function Products() {
                       <TableCell className="text-right">{product.weight_per_unit} kg</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {isLowQuantity(product.quantity) && (
+                          {product.quantity <= product.low_stock_alert && product.quantity > 0 && (
                             <AlertTriangle className="h-4 w-4 text-warning" />
                           )}
-                          <span className={isLowQuantity(product.quantity) ? 'text-warning font-medium' : ''}>
+                          <span className={product.quantity <= product.low_stock_alert ? 'text-warning font-medium' : ''}>
                             {product.quantity.toLocaleString()} bags
                           </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">{product.stock.toLocaleString()} {product.unit}</TableCell>
-                      <TableCell className="text-right">{product.low_stock_alert.toLocaleString()} kg</TableCell>
-                      <TableCell>{getStockBadge(product.quantity, product.stock, product.low_stock_alert)}</TableCell>
+                      <TableCell className="text-right">{product.low_stock_alert.toLocaleString()} bags</TableCell>
+                      <TableCell>{getStockBadge(product.quantity, product.low_stock_alert)}</TableCell>
                       <TableCell className="text-right">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
