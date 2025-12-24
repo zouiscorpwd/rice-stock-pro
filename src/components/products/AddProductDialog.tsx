@@ -90,13 +90,13 @@ export function AddProductDialog() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="lowStockAlert">Low Stock Alert (kg) *</Label>
+            <Label htmlFor="lowStockAlert">Low Stock Alert (bags) *</Label>
             <Input
               id="lowStockAlert"
               type="number"
               value={lowStockAlert}
               onChange={(e) => setLowStockAlert(e.target.value)}
-              placeholder="Alert when stock falls below this value"
+              placeholder="Alert when bag count falls below this value"
               min="0"
             />
           </div>
