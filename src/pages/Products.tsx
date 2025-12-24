@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Package, Loader2 } from 'lucide-react';
+import { Search, Trash2, Package, Loader2, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,11 +33,15 @@ export default function Products() {
     deleteProduct.mutate(id);
   };
 
-  const getStockBadge = (stock: number, lowStockAlert: number) => {
-    if (stock === 0) return <Badge variant="destructive">Out of Stock</Badge>;
+  const getStockBadge = (quantity: number, stock: number, lowStockAlert: number) => {
+    if (quantity === 0 || stock === 0) return <Badge variant="destructive">Out of Stock</Badge>;
     if (stock <= lowStockAlert) return <Badge className="bg-warning text-warning-foreground">Low Stock</Badge>;
     return <Badge className="bg-success text-success-foreground">In Stock</Badge>;
   };
+
+  const isLowQuantity = (quantity: number) => quantity > 0 && quantity <= 5;
+  
+  const lowStockProducts = products.filter(p => p.stock <= p.low_stock_alert || p.quantity <= 5);
 
   if (isLoading) {
     return (
@@ -54,6 +58,22 @@ export default function Products() {
         description="Manage your rice products inventory"
         action={<AddProductDialog />}
       />
+
+      {lowStockProducts.length > 0 && (
+        <Card className="mb-6 border-warning bg-warning/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              <div>
+                <p className="font-medium text-warning">Low Stock Alert</p>
+                <p className="text-sm text-muted-foreground">
+                  {lowStockProducts.length} product(s) running low: {lowStockProducts.map(p => p.name).join(', ')}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="shadow-card">
         <CardContent className="p-6">
@@ -93,10 +113,19 @@ export default function Products() {
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell className="text-right">{product.weight_per_unit} kg</TableCell>
-                      <TableCell className="text-right">{product.quantity.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {isLowQuantity(product.quantity) && (
+                            <AlertTriangle className="h-4 w-4 text-warning" />
+                          )}
+                          <span className={isLowQuantity(product.quantity) ? 'text-warning font-medium' : ''}>
+                            {product.quantity.toLocaleString()} bags
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">{product.stock.toLocaleString()} {product.unit}</TableCell>
                       <TableCell className="text-right">{product.low_stock_alert.toLocaleString()} kg</TableCell>
-                      <TableCell>{getStockBadge(product.stock, product.low_stock_alert)}</TableCell>
+                      <TableCell>{getStockBadge(product.quantity, product.stock, product.low_stock_alert)}</TableCell>
                       <TableCell className="text-right">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
